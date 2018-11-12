@@ -143,10 +143,10 @@ module Facebook
         # Get the tags of the message
         # https://developers.facebook.com/docs/messenger-platform/discovery/customer-chat-plugin#detect
         #
-        def tags
-          return [] unless @messaging['message']['tags']
+        def source
+          return unless @messaging['message']['tags']
 
-          @messaging['message']['tags']
+          @messaging['message']['tags']['source']
         end
 
         # @private
