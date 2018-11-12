@@ -8,12 +8,8 @@ module Facebook
       class PassThreadControl
         include Facebook::Messenger::Incoming::Common
 
-        def all
-          @messaging
-        end
-
         def metadata
-          @referral['metadata']
+          @messaging['pass_thread_control']['metadata']
         end
 
         def sender_id
