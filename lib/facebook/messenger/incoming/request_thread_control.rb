@@ -5,7 +5,7 @@ module Facebook
       # Facebook when they are notifying your app of a policy violation
       #
       # https://developers.facebook.com/docs/messenger-platform/reference/webhook-events/messaging_policy_enforcement
-      class PassThreadControl
+      class RequestThreadControl
         include Facebook::Messenger::Incoming::Common
 
         def all
@@ -21,7 +21,7 @@ module Facebook
         end
 
         def new_owner_app_id
-          @messaging['pass_thread_control']['new_owner_app_id']
+          @messaging['request_thread_control']['new_owner_app_id']
         end
 
       end
