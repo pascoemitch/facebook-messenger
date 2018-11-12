@@ -9,10 +9,6 @@ module Facebook
       class PassThreadControl
         include Facebook::Messenger::Incoming::Common
 
-        def initialize(pass_thread_control)
-          @pass_thread_control = pass_thread_control
-        end
-
         def all
           @messaging
         end
