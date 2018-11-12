@@ -139,6 +139,16 @@ module Facebook
           @messaging['message']['quick_reply']['payload']
         end
 
+        #
+        # Get the tags of the message
+        # https://developers.facebook.com/docs/messenger-platform/discovery/customer-chat-plugin#detect
+        #
+        def tags
+          return [] unless @messaging['message']['tags']
+
+          @messaging['message']['tags']
+        end
+
         # @private
         private
 
