@@ -25,6 +25,9 @@ describe Facebook::Messenger::Incoming::Message do
             'url' => 'https://www.example.com/1.jpg'
           }
         }],
+        'tags' => {
+          'source' => 'customer_chat_plugin'
+        },
         'nlp' => {
           'entities' => {
             'datetime' => [
@@ -295,6 +298,24 @@ describe Facebook::Messenger::Incoming::Message do
 
       it 'returns nil' do
         expect(subject.quick_reply).to eq(nil)
+      end
+    end
+  end
+
+  describe '.source' do
+    context 'when message was sent from chat plugin' do
+      it 'returns the source of the message' do
+        expect(subject.source).to eq(payload['message']['tags']['source'])
+      end
+    end
+
+    context 'when a message was not sent from chat plugin' do
+      before do
+        payload['message'].delete('tags')
+      end
+
+      it 'returns nil' do
+        expect(subject.source).to eq(nil)
       end
     end
   end
