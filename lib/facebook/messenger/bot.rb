@@ -30,6 +30,7 @@ module Facebook
         policy_enforcement
         pass_thread_control
         request_thread_control
+        take_thread_control
       ].freeze
 
       class << self
