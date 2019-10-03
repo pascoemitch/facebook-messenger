@@ -1,9 +1,19 @@
 # Change Log
 
+## [1.4.1] - 2019-09-28
+
+### Fixed
+- Fixed a reference to Graph API 2.9 in `Profile`.
+
+## [1.4.0] - 2019-04-17
+
+### Added
+- Support for game_plays
+
 ## [1.3.0] - 2019-04-16
 
 ### Added
-- Support for PassThreadControl
+- Support for pass_thread_control
 
 ## [1.2.0] - 2019-04-13
 

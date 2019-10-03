@@ -9,6 +9,14 @@ module Facebook
       class PassThreadControl
         include Facebook::Messenger::Incoming::Common
 
+        def metadata
+          @messaging['pass_thread_control']['metadata']
+        end
+
+        def sender_id
+          @messaging['sender']['id']
+        end
+
         def new_owner_app_id
           @messaging['pass_thread_control']['new_owner_app_id']
         end
@@ -17,9 +25,10 @@ module Facebook
           @messaging['pass_thread_control']['metadata']
         end
 
-        def sender_id
-          @messaging['sender']['id']
+        def pass_thread_control
+          @pass_thread_control ||= PassThreadControl.new(@messaging['pass_thread_control'])
         end
+
       end
     end
   end

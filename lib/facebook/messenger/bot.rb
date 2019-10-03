@@ -31,6 +31,7 @@ module Facebook
         pass_thread_control
         request_thread_control
         take_thread_control
+        game_play
       ].freeze
 
       class << self
