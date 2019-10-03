@@ -14,7 +14,6 @@ require 'facebook/messenger/incoming/pass_thread_control'
 require 'facebook/messenger/incoming/request_thread_control'
 require 'facebook/messenger/incoming/take_thread_control'
 require 'facebook/messenger/incoming/game_play'
->>>>>>> added take_thread_control
 
 module Facebook
   module Messenger
