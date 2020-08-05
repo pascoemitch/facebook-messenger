@@ -32,6 +32,7 @@ module Facebook
         request_thread_control
         take_thread_control
         game_play
+        reaction
       ].freeze
 
       class << self
@@ -41,20 +42,18 @@ module Facebook
         # @raise [Facebook::Messenger::Bot::SendError] if there is any error
         #   in response while sending message.
         #
-        # @param [Hash] message A Hash describing the recipient and the message.
-        # @param [String] access_token Access token.
-        # @param [String] app_secret_proof proof of the app_secret
-        # https://developers.facebook.com/docs/graph-api/securing-requests/
-        # Note: we provide a helper function available at
-        # Messenger::Configuration::Providers::Base#calculate_app_secret_proof
+        # @param [Hash] message The message payload
+        # @param [String] page_id The page to send the message from
         #
         # Returns a String describing the message ID if the message was sent,
         # or raises an exception if it was not.
-        def deliver(message, access_token:, app_secret_proof: nil)
-          query = {
-            access_token: access_token
-          }
+        def deliver(message, page_id:)
+          access_token = config.provider.access_token_for(page_id)
+          app_secret_proof = config.provider.app_secret_proof_for(page_id)
+
+          query = { access_token: access_token }
           query[:appsecret_proof] = app_secret_proof if app_secret_proof
+
           response = post '/messages',
                           body: JSON.dump(message),
                           format: :json,
@@ -140,6 +139,12 @@ module Facebook
               'Content-Type' => 'application/json'
             }
           )
+        end
+
+        private
+
+        def config
+          Facebook::Messenger.config
         end
       end
     end

@@ -1,15 +1,16 @@
 require 'spec_helper'
 
 describe Facebook::Messenger::Bot do
+  let(:config) { Facebook::Messenger.config }
+  let(:page_id) { '123456' }
   let(:verify_token) { 'verify token' }
   let(:app_secret) { 'app secret' }
   let(:access_token) { 'access token' }
-  let(:app_secret_proof) { 'app_secret_proof' }
+  let(:app_secret_proof) { config.provider.app_secret_proof_for }
 
   before do
     ENV['ACCESS_TOKEN'] = access_token
     ENV['APP_SECRET'] = app_secret
-    ENV['ACCESS_TOKEN'] = access_token
   end
 
   subject { Facebook::Messenger::Bot }
@@ -66,7 +67,7 @@ describe Facebook::Messenger::Bot do
     context 'with a postback' do
       let(:postback) { Facebook::Messenger::Incoming::Postback.new({}) }
 
-      it 'triggers a :delivery' do
+      it 'triggers a :postback' do
         expect(Facebook::Messenger::Incoming).to receive(:parse)
           .and_return(postback)
 
@@ -80,7 +81,7 @@ describe Facebook::Messenger::Bot do
     context 'with an optin' do
       let(:optin) { Facebook::Messenger::Incoming::Optin.new({}) }
 
-      it 'triggers a :delivery' do
+      it 'triggers an :optin' do
         expect(Facebook::Messenger::Incoming).to receive(:parse)
           .and_return(optin)
 
@@ -136,6 +137,22 @@ describe Facebook::Messenger::Bot do
         subject.receive({})
       end
     end
+
+    context 'with a :reaction' do
+      let(:reaction) do
+        Facebook::Messenger::Incoming::MessageReaction.new({})
+      end
+
+      it 'triggers a :reaction' do
+        expect(Facebook::Messenger::Incoming).to receive(:parse)
+          .and_return(reaction)
+
+        expect(Facebook::Messenger::Bot).to receive(:trigger)
+          .with(:reaction, reaction)
+
+        subject.receive({})
+      end
+    end
   end
 
   describe '.trigger' do
@@ -177,18 +194,6 @@ describe Facebook::Messenger::Bot do
     def stub_request_to_return(hash)
       stub_request(:post, messages_url)
         .with(
-          query: { access_token: access_token },
-          body: payload,
-          headers: { 'Content-Type' => 'application/json' }
-        ).to_return(
-          body: JSON.dump(hash),
-          headers: default_graph_api_response_headers
-        )
-    end
-
-    def stub_request_to_return_with_proof(hash)
-      stub_request(:post, messages_url)
-        .with(
           query: { access_token: access_token,
                    appsecret_proof: app_secret_proof },
           body: payload,
@@ -199,39 +204,26 @@ describe Facebook::Messenger::Bot do
         )
     end
 
-    context 'when all is well without an appsecret_proof' do
+    context 'when all is well' do
       let(:recipient_id) { '1008372609250235' }
       let(:message_id) { 'mid.1456970487936:c34767dfe57ee6e339' }
 
       before do
+        ENV['APP_SECRET_PROOF_ENABLED'] = 'true'
+
         stub_request_to_return(
           recipient_id: recipient_id,
           message_id: message_id
         )
       end
 
-      it 'sends a message' do
-        result = subject.deliver(payload, access_token: access_token)
-        expect(result).to eq({ recipient_id: recipient_id,
-                               message_id: message_id }.to_json)
-      end
-    end
-
-    context 'when all is well with an appsecret_proof' do
-      let(:recipient_id) { '1008372609250235' }
-      let(:message_id) { 'mid.1456970487936:c34767dfe57ee6e339' }
-
-      before do
-        stub_request_to_return_with_proof(
-          recipient_id: recipient_id,
-          message_id: message_id
-        )
+      after do
+        ENV['APP_SECRET_PROOF_ENABLED'] = nil
       end
 
       it 'sends a message' do
-        result = subject.deliver(payload,
-                                 access_token: access_token,
-                                 app_secret_proof: app_secret_proof)
+        result = subject.deliver(payload, page_id: page_id)
+
         expect(result).to eq({ recipient_id: recipient_id,
                                message_id: message_id }.to_json)
       end
@@ -251,7 +243,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises InternalError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::InternalError,
           'Temporary send message failure. Please try again later.'
@@ -273,7 +265,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises LimitError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::LimitError,
           'Calls to this API have exceeded the rate limit'
@@ -295,7 +287,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises BadParameterError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::BadParameterError,
           'Invalid fbid.'
@@ -318,7 +310,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises BadParameterError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::BadParameterError,
           'No matching user found.'
@@ -340,7 +332,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises AccessTokenError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::AccessTokenError,
           'Invalid OAuth access token.'
@@ -364,7 +356,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises PermissionError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::PermissionError,
           'This message is sent outside of allowed window. You need ' \
@@ -389,7 +381,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises PermissionError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::PermissionError,
           'This Person Cannot Receive Messages: This person isn\'t receiving ' \
@@ -414,7 +406,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises PermissionError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::PermissionError,
           'Message Not Sent: This person isn\'t receiving messages from you ' \
@@ -437,7 +429,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises PermissionError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::PermissionError,
           'Requires pages_messaging permission to manage the object'
@@ -462,7 +454,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises PermissionError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::PermissionError,
           'Cannot message users who are not admins, developers or testers of ' \
@@ -490,7 +482,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises PermissionError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::PermissionError,
           'Cannot message users who are not admins, developers or testers of ' \
@@ -517,7 +509,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises PermissionError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::PermissionError,
           'Requires phone matching access fee to be paid by this page unless ' \
@@ -540,7 +532,7 @@ describe Facebook::Messenger::Bot do
 
       it 'raises AccountLinkingError' do
         expect do
-          subject.deliver(payload, access_token: access_token)
+          subject.deliver(payload, page_id: page_id)
         end.to raise_error(
           Facebook::Messenger::Bot::AccountLinkingError,
           'Invalid account_linking_token'
